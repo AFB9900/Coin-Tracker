@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quant Terminal Pro{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-[#0b0e11] text-[#eaecef] font-sans min-h-screen flex flex-col">
+
+    <nav class="bg-[#181a20] border-b border-[#2b2f36] px-6 py-4 flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#f0b90b]/10 text-[#f0b90b] flex items-center justify-center text-xl border border-[#f0b90b]/20">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+                <span class="text-white font-bold text-lg tracking-wide block">Quant Terminal Pro</span>
+                <span class="text-xs text-[#848e9c]">Async Engine v2.0</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-[#848e9c] bg-[#2b2f36] px-3 py-1.5 rounded-xl border border-[#474d57]">
+                <i class="fa-solid fa-user-shield text-[#f0b90b] mr-1.5"></i>Giriş Yapıldı
+            </span>
+            <a href="/logout" class="text-sm bg-red-950/40 hover:bg-red-900/60 text-red-400 px-3 py-1.5 rounded-xl border border-red-900/50 transition-all">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i>Güvenli Çıkış
+            </a>
+        </div>
+    </nav>
+
+    <div class="flex-1 w-full max-w-[1600px] mx-auto p-6">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>

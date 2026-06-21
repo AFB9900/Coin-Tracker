@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Panel - Quant Terminal Pro{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <div class="lg:col-span-1 bg-[#181a20] rounded-2xl border border-[#2b2f36] p-5 shadow-lg h-fit">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-[#848e9c] mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-fire text-[#f0b90b]"></i> Hızlı Keşif (Binance Spot)
+        </h3>
+        <div id="discovery-list" class="space-y-3">
+            <div class="text-[#848e9c] text-xs animate-pulse">Piyasa verileri yükleniyor...</div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-[#2b2f36] flex items-center justify-between text-sm">
+            <span class="text-[#848e9c]"><i class="fa-solid fa-dollar-sign mr-1"></i> Canlı USDT/TRY:</span>
+            <span id="usdt-try-rate" class="font-mono font-bold text-white">--.-- ₺</span>
+        </div>
+    </div>
+
+    <div class="lg:col-span-3 space-y-6">
+        
+        <div class="bg-[#181a20] rounded-2xl border border-[#2b2f36] p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-white">Kişisel İzleme ve Limit Üssü</h2>
+                <p class="text-xs text-[#848e9c]">Sadece senin hesabına ait aktif alarmlar ve pariteler</p>
+            </div>
+            
+            <form action="/api/add-coin" method="POST" class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <input type="text" name="symbol" required placeholder="Örn: BTC, ETH" uppercase
+                    class="px-3 py-2 bg-[#2b2f36] border border-[#474d57] rounded-xl text-white placeholder-[#5e6673] focus:outline-none focus:border-[#f0b90b] text-sm font-semibold uppercase">
+                <input type="number" step="any" name="upper_limit" required placeholder="Üst Limit ($)"
+                    class="px-3 py-2 bg-[#2b2f36] border border-[#474d57] rounded-xl text-white placeholder-[#5e6673] focus:outline-none focus:border-[#f0b90b] text-sm font-mono w-28">
+                <input type="number" step="any" name="lower_limit" required placeholder="Alt Limit ($)"
+                    class="px-3 py-2 bg-[#2b2f36] border border-[#474d57] rounded-xl text-white placeholder-[#5e6673] focus:outline-none focus:border-[#f0b90b] text-sm font-mono w-28">
+                <button type="submit" class="px-4 py-2 bg-[#f0b90b] hover:bg-[#d9a507] text-[#0b0e11] font-bold rounded-xl text-sm transition-all cursor-pointer">
+                    <i class="fa-solid fa-plus mr-1"></i> Takibe Al
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-[#181a20] rounded-2xl border border-[#2b2f36] shadow-lg overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-[#2b2f36]/40 border-b border-[#2b2f36] text-[#848e9c] text-xs font-semibold uppercase tracking-wider">
+                        <th class="p-4">Sembol</th>
+                        <th class="p-4">Piyasa</th>
+                        <th class="p-4">Anlık Fiyat</th>
+                        <th class="p-4">24s Değişim</th>
+                        <th class="p-4">Hedef Üst Limit</th>
+                        <th class="p-4">Hedef Alt Limit</th>
+                        <th class="p-4 text-center">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="watchlist-table-body" class="divide-y divide-[#2b2f36] text-sm">
+                    <tr>
+                        <td colspan="7" class="p-8 text-center text-[#848e9c] animate-pulse">Hesabınıza ait takip listesi yükleniyor...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function refreshDashboardData() {
+        try {
+            const response = await fetch('/api/status');
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            // 1. Canlı Dolar Kurunu Güncelle
+            document.getElementById('usdt-try-rate').innerText = data.usdt_try.toFixed(2) + ' ₺';
+
+            // 2. Sol Panel Keşif Listesini Güncelle
+            const discoveryList = document.getElementById('discovery-list');
+            discoveryList.innerHTML = '';
+            for (const [coin, info] of Object.entries(data.discovery_prices)) {
+                const changeClass = info.change >= 0 ? 'text-green-400' : 'text-red-400';
+                const changeSign = info.change >= 0 ? '+' : '';
+                discoveryList.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 bg-[#2b2f36]/30 rounded-xl border border-[#2b2f36] hover:border-[#474d57] transition-all">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-white text-sm">${coin}/USDT</span>
+                            <span class="text-xs ${changeClass}">${changeSign}${info.change.toFixed(2)}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-white text-sm font-semibold">$${info.price.toLocaleString()}</span>
+                            <form action="/api/quick-add" method="POST" class="inline">
+                                <input type="hidden" name="symbol" value="${coin}USDT">
+                                <button type="submit" class="text-xs bg-[#2b2f36] hover:bg-[#f0b90b] text-[#848e9c] hover:text-[#0b0e11] p-1.5 rounded-lg transition-all cursor-pointer">
+                                    <i class="fa-solid fa-star"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. Sağ Panel Kişisel İzleme Listesini Güncelle
+            const tableBody = document.getElementById('watchlist-table-body');
+            tableBody.innerHTML = '';
+            
+            if (Object.keys(data.watchlist).length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-[#848e9c]">Takip listeniz boş. Yukarıdaki formdan coin ekleyebilirsiniz.</td></tr>`;
+                return;
+            }
+
+            for (const [symbol, coinInfo] of Object.entries(data.watchlist)) {
+                const changeClass = coinInfo.price_change_24h >= 0 ? 'text-green-400' : 'text-red-400';
+                const changeSign = coinInfo.price_change_24h >= 0 ? '+' : '';
+                const marketBadge = coinInfo.market_type === 'futures' 
+                    ? '<span class="px-2 py-0.5 bg-purple-950/50 text-purple-400 border border-purple-900 rounded-lg text-xs font-bold uppercase">Futures</span>' 
+                    : '<span class="px-2 py-0.5 bg-blue-950/50 text-blue-400 border border-blue-900 rounded-lg text-xs font-bold uppercase">Spot</span>';
+
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-[#2b2f36]/20 transition-all">
+                        <td class="p-4 font-bold text-white"><a href="/coin/${symbol}" class="hover:text-[#f0b90b] hover:underline">${symbol}</a></td>
+                        <td class="p-4">${marketBadge}</td>
+                        <td class="p-4 font-mono font-semibold text-white">$${coinInfo.current_price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="p-4 font-mono ${changeClass}">${changeSign}${coinInfo.price_change_24h.toFixed(2)}%</td>
+                        <td class="p-4 font-mono text-red-400">$${coinInfo.upper_limit.toLocaleString()}</td>
+                        <td class="p-4 font-mono text-green-400">$${coinInfo.lower_limit.toLocaleString()}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="/coin/${symbol}" class="px-3 py-1.5 bg-[#2b2f36] hover:bg-[#f0b90b] text-[#eaecef] hover:text-[#0b0e11] text-xs font-bold rounded-xl transition-all">
+                                    <i class="fa-solid fa-robot mr-1"></i> Analiz Detay
+                                </a>
+                                <form action="/api/delete-coin" method="POST" class="inline">
+                                    <input type="hidden" name="symbol" value="${symbol}">
+                                    <button type="submit" class="p-1.5 bg-red-950/20 hover:bg-red-900 border border-red-900/30 text-red-400 hover:text-white rounded-xl text-xs transition-all cursor-pointer">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        } catch (error) {
+            console.error("Dashboard senkronizasyon hatası:", error);
+        }
+    }
+
+    // İlk açılışta tetikle ve her 4 saniyede bir arkada sessizce güncelle
+    refreshDashboardData();
+    setInterval(refreshDashboardData, 4000);
+</script>
+{% endblock %}
